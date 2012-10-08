@@ -69,12 +69,14 @@ cohort_removal() ->
 
 create_team() ->
   Added = allegiance:create_team("Team Broooooooohaha", mineUid),
+  Name = allegiance:team_property(1, name),
   Teams = allegiance:teams(),
   Members = allegiance:members_of_team(1),
   TeamsOfMember = allegiance:teams_for_member(mineUid),
   Sz = allegiance:team_size(1),
   ?assertEqual([<<"1">>], Teams),
   ?assertEqual(1, Added),
+  ?assertEqual(<<"Team Broooooooohaha">>, Name),
   ?assertEqual([<<"mineUid">>], Members),
   ?assertEqual([<<"1">>], TeamsOfMember),
   ?assertEqual(1, Sz).

@@ -5,7 +5,7 @@
 -export([add_cohort_to_user/2, add_cohort_to_user/3]).
 -export([remove_cohort_from_user/2]).
 
--export([teams/0, team_properties/1]).
+-export([teams/0, team_properties/1, team_property/2]).
 -export([members_of_team/1]).
 -export([teams_for_member/1]).
 -export([team_size/1]).
@@ -84,6 +84,9 @@ team_size(TeamId) ->
 
 team_properties(TeamId) ->
   hgetall(team, TeamId).
+
+team_property(TeamId, Property) ->
+  hget(team, TeamId, Property).
 
 %%%--------------------------------------------------------------------
 %%% Teaming Updating
