@@ -1,7 +1,7 @@
 -module(allegiance).
 
 -export([start/0]).
--export([users_cohorts/1, users_who_have_this_uid_as_a_cohort/1]).
+-export([cohorts_for_user/1, users_who_have_this_uid_as_a_cohort/1]).
 -export([add_cohort_to_user/2, add_cohort_to_user/3]).
 -export([remove_cohort_from_user/2]).
 
@@ -25,7 +25,7 @@ start() ->
 %%%--------------------------------------------------------------------
 %%% Cohorting Reading
 %%%--------------------------------------------------------------------
-users_cohorts(Uid) ->
+cohorts_for_user(Uid) ->
   zmembers(cohorts, Uid).
 
 users_who_have_this_uid_as_a_cohort(Uid) ->

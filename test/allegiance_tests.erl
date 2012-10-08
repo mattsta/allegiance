@@ -34,19 +34,24 @@ cohort_3() ->
   Result1 = allegiance:add_cohort_to_user(user1, cohort1),
   Result2 = allegiance:add_cohort_to_user(user1, cohort2),
   Result3 = allegiance:add_cohort_to_user(user1, cohort3),
+  All = allegiance:cohorts_for_user(user1),
   ?assertEqual(1, Result1),
   ?assertEqual(2, Result2),
-  ?assertEqual(3, Result3).
+  ?assertEqual(3, Result3),
+  ?assertEqual([<<"cohort1">>, <<"cohort2">>, <<"cohort3">>], All).
 
 cohort_7() ->
   Result4 = allegiance:add_cohort_to_user(user1, cohort4),
   Result5 = allegiance:add_cohort_to_user(user1, cohort5),
   Result6 = allegiance:add_cohort_to_user(user1, cohort6),
   Result7 = allegiance:add_cohort_to_user(user1, cohort7),
+  All = allegiance:cohorts_for_user(user1),
   ?assertEqual(4, Result4),
   ?assertEqual(5, Result5),
   ?assertEqual(full, Result6),
-  ?assertEqual(full, Result7).
+  ?assertEqual(full, Result7),
+  ?assertEqual([<<"cohort1">>, <<"cohort2">>,
+                <<"cohort3">>, <<"cohort4">>, <<"cohort5">>], All).
 
 cohort_reversal() ->
   ReversedYes = allegiance:users_who_have_this_uid_as_a_cohort(cohort4),
