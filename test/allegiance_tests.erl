@@ -74,12 +74,16 @@ create_team() ->
   Members = allegiance:members_of_team(1),
   TeamsOfMember = allegiance:teams_for_member(mineUid),
   Sz = allegiance:team_size(1),
+  Yes = allegiance:is_team_member(1, mineUid),
+  No = allegiance:is_team_member(1, froofroo),
   ?assertEqual([<<"1">>], Teams),
   ?assertEqual(1, Added),
   ?assertEqual(<<"Team Broooooooohaha">>, Name),
   ?assertEqual([<<"mineUid">>], Members),
   ?assertEqual([<<"1">>], TeamsOfMember),
-  ?assertEqual(1, Sz).
+  ?assertEqual(1, Sz),
+  ?assertEqual(true, Yes),
+  ?assertEqual(false, No).
 
 token_doing() ->
   TokenAnybody = allegiance:create_invite_token(1, mineUid),

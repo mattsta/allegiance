@@ -6,7 +6,7 @@
 -export([remove_cohort_from_user/2]).
 
 -export([teams/0, team_properties/1, team_property/2]).
--export([members_of_team/1]).
+-export([members_of_team/1, is_team_member/2]).
 -export([teams_for_member/1]).
 -export([team_size/1]).
 
@@ -87,6 +87,9 @@ team_properties(TeamId) ->
 
 team_property(TeamId, Property) ->
   hget(team, TeamId, Property).
+
+is_team_member(TeamId, Uid) ->
+  zmember(members, TeamId, Uid).
 
 %%%--------------------------------------------------------------------
 %%% Teaming Updating
@@ -197,6 +200,12 @@ hget(Type, Id, What) ->
 
 hgetall(Type, Id) ->
   er:hgetall_p(redis_allegiance, genkey(Type, Id)).
+
+zmember(Type, Id, Member) ->
+  case er:zrank(redis_allegiance, genkey(Type, Id), Member) of
+    nil -> false;
+      _ -> true
+  end.
 
 zmembers(Type) ->
   er:zrange(redis_allegiance, genkey(Type), 0, -1).
