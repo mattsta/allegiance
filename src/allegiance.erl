@@ -7,7 +7,7 @@
 
 -export([teams/0, team_properties/1]).
 -export([members_of_team/1]).
--export([teams_of_member/1]).
+-export([teams_for_member/1]).
 -export([team_size/1]).
 
 -export([create_team/2]).
@@ -76,7 +76,7 @@ teams() ->
 members_of_team(TeamId) ->
   zmembers(members, TeamId).
 
-teams_of_member(Uid) ->
+teams_for_member(Uid) ->
   zmembers(teams, Uid).
 
 team_size(TeamId) ->

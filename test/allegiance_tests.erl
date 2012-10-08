@@ -71,7 +71,7 @@ create_team() ->
   Added = allegiance:create_team("Team Broooooooohaha", mineUid),
   Teams = allegiance:teams(),
   Members = allegiance:members_of_team(1),
-  TeamsOfMember = allegiance:teams_of_member(mineUid),
+  TeamsOfMember = allegiance:teams_for_member(mineUid),
   Sz = allegiance:team_size(1),
   ?assertEqual([<<"1">>], Teams),
   ?assertEqual(1, Added),
@@ -88,9 +88,9 @@ token_doing() ->
 
   Members = allegiance:members_of_team(1),
   Sz = allegiance:team_size(1),
-  TeamsOfMemberNotBob = allegiance:teams_of_member(notBob),
-  TeamsOfMemberBob = allegiance:teams_of_member(bob),
-  TeamsOfMemberAJ = allegiance:teams_of_member(anybodyJones),
+  TeamsOfMemberNotBob = allegiance:teams_for_member(notBob),
+  TeamsOfMemberBob = allegiance:teams_for_member(bob),
+  TeamsOfMemberAJ = allegiance:teams_for_member(anybodyJones),
 
   ?assertEqual(welcome, GoodFine),
   ?assertEqual(baduser, Bad),
