@@ -1,0 +1,14 @@
+{application, allegiance,
+ [
+  {description, "allegiance: user grouping and teaming management."},
+  {vsn, "0.3"},
+  {modules, []},
+  {registered, [allegiance_sup]},
+  {applications, [
+                  kernel,
+                  stdlib,
+                  riak_pool
+                 ]},
+  {mod, {allegiance_app, []}},
+  {env, []}
+ ]}.
