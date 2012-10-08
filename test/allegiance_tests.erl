@@ -35,10 +35,14 @@ cohort_3() ->
   Result2 = allegiance:add_cohort_to_user(user1, cohort2),
   Result3 = allegiance:add_cohort_to_user(user1, cohort3),
   All = allegiance:cohorts_for_user(user1),
+  Yes = allegiance:is_cohort_member(user1, cohort3),
+  No = allegiance:is_cohort_member(user1, cohort64),
   ?assertEqual(1, Result1),
   ?assertEqual(2, Result2),
   ?assertEqual(3, Result3),
-  ?assertEqual([<<"cohort1">>, <<"cohort2">>, <<"cohort3">>], All).
+  ?assertEqual([<<"cohort1">>, <<"cohort2">>, <<"cohort3">>], All),
+  ?assertEqual(true, Yes),
+  ?assertEqual(false, No).
 
 cohort_7() ->
   Result4 = allegiance:add_cohort_to_user(user1, cohort4),

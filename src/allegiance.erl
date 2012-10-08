@@ -2,6 +2,7 @@
 
 -export([start/0]).
 -export([cohorts_for_user/1, users_who_have_this_uid_as_a_cohort/1]).
+-export([is_cohort_member/2]).
 -export([add_cohort_to_user/2, add_cohort_to_user/3]).
 -export([remove_cohort_from_user/2]).
 
@@ -30,6 +31,11 @@ cohorts_for_user(Uid) ->
 
 users_who_have_this_uid_as_a_cohort(Uid) ->
   zmembers(cohorts_belong, Uid).
+
+is_cohort_member(CohortOwnerUid, CohortOwnerUid) ->
+  true;  % the member can access its own cohort without being in it directly
+is_cohort_member(CohortOwnerUid, CohortMemberUid) ->
+  zmember(cohorts, CohortOwnerUid, CohortMemberUid).
 
 %%%--------------------------------------------------------------------
 %%% Cohorting Updating
