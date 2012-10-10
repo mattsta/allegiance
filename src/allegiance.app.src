@@ -6,8 +6,7 @@
   {registered, [allegiance_sup]},
   {applications, [
                   kernel,
-                  stdlib,
-                  riak_pool
+                  stdlib
                  ]},
   {mod, {allegiance_app, []}},
   {env, []}
