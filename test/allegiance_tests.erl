@@ -22,6 +22,11 @@ allegiance_test_() ->
      {"Create team",
        fun create_team/0},
 
+     {"Add Member",
+       fun add_member/0},
+     {"Remove Member",
+       fun remove_member/0},
+
      {"Token creation and redemption",
        fun token_doing/0}
     ]
@@ -88,6 +93,16 @@ create_team() ->
   ?assertEqual(1, Sz),
   ?assertEqual(true, Yes),
   ?assertEqual(false, No).
+
+add_member() ->
+  allegiance:add_member(1, bobAdded),
+  Members = allegiance:members_of_team(1),
+  ?assertEqual([<<"bobAdded">>, <<"mineUid">>], Members).
+
+remove_member() ->
+  allegiance:remove_member(1, bobAdded),
+  Members = allegiance:members_of_team(1),
+  ?assertEqual([<<"mineUid">>], Members).
 
 token_doing() ->
   TokenAnybody = allegiance:create_invite_token(1, mineUid),

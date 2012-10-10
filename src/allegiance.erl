@@ -11,8 +11,8 @@
 -export([teams_for_member/1]).
 -export([team_size/1]).
 
--export([create_team/2]).
--export([add_member/2]).
+-export([create_team/2, create_team/3, create_team/4]).
+-export([add_member/2, remove_member/2]).
 -export([create_invite_token/2, create_invite_token/3, redeem_invite_token/2]).
 
 -import(proplists, [get_value/2]).
@@ -34,8 +34,8 @@ users_who_have_this_uid_as_a_cohort(Uid) ->
 
 is_cohort_member(CohortOwnerUid, CohortOwnerUid) ->
   true;  % the member can access its own cohort without being in it directly
-is_cohort_member(CohortOwnerUid, CohortMemberUid) ->
-  zmember(cohorts, CohortOwnerUid, CohortMemberUid).
+is_cohort_member(CohortOwnerUid, CohortMemberId) ->
+  zmember(cohorts, CohortOwnerUid, CohortMemberId).
 
 %%%--------------------------------------------------------------------
 %%% Cohorting Updating
@@ -105,6 +105,9 @@ create_team(Name, CreatedByUid) ->
 
 create_team(Name, CreatedByUid, MaxSz) ->
   TeamId = incr(genkey(team_counter)),
+  create_team(TeamId, Name, CreatedByUid, MaxSz).
+
+create_team(TeamId, Name, CreatedByUid, MaxSz) ->
   Epoch = epoch(),
   hmset(team, TeamId, [name, Name,
                        created, Epoch,
@@ -117,13 +120,20 @@ epoch() ->
   {Mega, Sec, _} = now(),
   Mega * 1000000 + Sec.
 
-add_member(TeamId, NewMemberUid) ->
+add_member(TeamId, NewMemberId) ->
   MaxSz = list_to_integer(binary_to_list(hget(team, TeamId, maxSz))),
   with_team_lock(TeamId,
     fun(Size) when Size < MaxSz ->
-      zadd(members, TeamId, epoch(), NewMemberUid),
-      zadd(teams, NewMemberUid, epoch(), TeamId);
+      zadd(members, TeamId, epoch(), NewMemberId),
+      zadd(teams, NewMemberId, epoch(), TeamId);
     (_) -> full
+  end).
+
+remove_member(TeamId, OldMemberId) ->
+  with_team_lock(TeamId,
+    fun(_Size) ->
+      zrem(members, TeamId, OldMemberId),
+      zrem(teams, OldMemberId, TeamId)
   end).
 
 gen_token() ->
