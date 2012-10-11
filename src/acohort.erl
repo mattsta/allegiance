@@ -1,7 +1,7 @@
 -module(acohort).
 
 -export([create_cohort/2, create_cohort/3]).
--export([cohorts/0, cohort_properties/1, cohort_property/2]).
+-export([cohorts/0, cohort_properties/1, cohort_property/2, cohort_property/3]).
 -export([cohorts_for/1, is_cohort_member/2]).
 -export([cohorts_uid_belongs_to/1]).
 -export([cohort_size/1]).
@@ -30,6 +30,9 @@ cohort_properties(Uid) ->
 
 cohort_property(Uid, Property) ->
   allegiance:bottle_prop(cohort, Uid, Property).
+
+cohort_property(Uid, Property, Value) ->
+  allegiance:bottle_prop(cohort, Uid, Property, Value).
 
 is_cohort_member(Uid, MemberQueryUid) ->
   allegiance:is_member(cohort, Uid, MemberQueryUid).

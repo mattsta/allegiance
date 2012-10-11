@@ -2,7 +2,8 @@
 
 -export([start/0]).
 
--export([all/1, members_of/2, member_has/2, bottle_props/2, bottle_prop/3]).
+-export([all/1, members_of/2, member_has/2]).
+-export([bottle_props/2, bottle_prop/3, bottle_prop/4]).
 -export([is_member/3]).
 -export([member_count/2]).
 -export([create_bottle/4, create_bottle/5, create_bottle/6]).
@@ -64,6 +65,9 @@ bottle_props(Type, Id) ->
 
 bottle_prop(Type, Id, Prop) ->
   hget(Type, Id, Prop).
+
+bottle_prop(Type, Id, Prop, Value) ->
+  hmset(Type, Id, [Prop, Value]).
 
 is_member(Type, Id, Uid) ->
   zmember(Type, members, Id, Uid).
