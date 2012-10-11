@@ -1,19 +1,13 @@
 -module(allegiance).
 
 -export([start/0]).
--export([cohorts_for_user/1, users_who_have_this_uid_as_a_cohort/1]).
--export([is_cohort_member/2]).
--export([add_cohort_to_user/2, add_cohort_to_user/3]).
--export([remove_cohort_from_user/2]).
 
--export([teams/0, team_properties/1, team_property/2]).
--export([members_of_team/1, is_team_member/2]).
--export([teams_for_member/1]).
--export([team_size/1]).
-
--export([create_team/2, create_team/3, create_team/4]).
--export([add_member/2, remove_member/2]).
--export([create_invite_token/2, create_invite_token/3, redeem_invite_token/2]).
+-export([all/1, members_of/2, member_has/2, bottle_props/2, bottle_prop/3]).
+-export([is_member/3]).
+-export([member_count/2]).
+-export([create_bottle/4, create_bottle/5, create_bottle/6]).
+-export([add_member/3, remove_member/3]).
+-export([create_invite_token/3, create_invite_token/4, redeem_invite_token/2]).
 
 -import(proplists, [get_value/2]).
 
@@ -24,118 +18,81 @@ start() ->
   application:start(allegiance).
 
 %%%--------------------------------------------------------------------
-%%% Cohorting Reading
+%%% Bottle Creation
 %%%--------------------------------------------------------------------
-cohorts_for_user(Uid) ->
-  zmembers(cohorts, Uid).
+create_bottle(Type, Name, CreatedByUid, MaxSz) ->
+  Id = incr(genkey(counter, Type)),
+  create_bottle(Type, Id, Name, CreatedByUid, MaxSz).
 
-users_who_have_this_uid_as_a_cohort(Uid) ->
-  zmembers(cohorts_belong, Uid).
+create_bottle(Type, Id, Name, CreatedByUid, MaxSz) ->
+  create_bottle(Type, Id, Name, CreatedByUid, MaxSz, addSelf).
 
-is_cohort_member(CohortOwnerUid, CohortOwnerUid) ->
-  true;  % the member can access its own cohort without being in it directly
-is_cohort_member(CohortOwnerUid, CohortMemberId) ->
-  zmember(cohorts, CohortOwnerUid, CohortMemberId).
-
-%%%--------------------------------------------------------------------
-%%% Cohorting Updating
-%%%--------------------------------------------------------------------
-add_cohort_to_user(UserUid, NewCohortAdditionUid) ->
-  add_cohort_to_user(UserUid, NewCohortAdditionUid, 5).
-
-add_cohort_to_user(UserUid, NewCohortAdditionUid, MaxSz) ->
-  with_cohort_lock(UserUid,
-    fun(Size) when Size < MaxSz ->
-      Epoch = epoch(),
-      zadd(cohorts, UserUid, Epoch, NewCohortAdditionUid),
-      zadd(cohorts_belong, NewCohortAdditionUid, Epoch, UserUid),
-      Size + 1;
-    (_) -> full
-  end).
-
-remove_cohort_from_user(UserUid, RemoveCohortUid) ->
-  zrem(cohorts, UserUid, RemoveCohortUid).
-
-with_cohort_lock(Uid, WorkFun) ->
-  with_lock(cohort, Uid, fun() -> WorkFun(cohort_size(Uid)) end).
-
-with_lock(Namespace, Id, WorkFun) ->
-  lock(Namespace, Id),
-  try
-    WorkFun()
-  after
-    unlock(Namespace, Id)
-  end.
-
-cohort_size(Uid) ->
-  case zcard(cohorts, Uid) of
-    nil -> 0;
-      S -> S
-  end.
-
-%%%--------------------------------------------------------------------
-%%% Teaming Reading
-%%%--------------------------------------------------------------------
-teams() ->
-  zmembers(teams).
-
-members_of_team(TeamId) ->
-  zmembers(members, TeamId).
-
-teams_for_member(Uid) ->
-  zmembers(teams, Uid).
-
-team_size(TeamId) ->
-  zcard(members, TeamId).
-
-team_properties(TeamId) ->
-  hgetall(team, TeamId).
-
-team_property(TeamId, Property) ->
-  hget(team, TeamId, Property).
-
-is_team_member(TeamId, Uid) ->
-  zmember(members, TeamId, Uid).
-
-%%%--------------------------------------------------------------------
-%%% Teaming Updating
-%%%--------------------------------------------------------------------
-create_team(Name, CreatedByUid) ->
-  create_team(Name, CreatedByUid, 40).
-
-create_team(Name, CreatedByUid, MaxSz) ->
-  TeamId = incr(genkey(team_counter)),
-  create_team(TeamId, Name, CreatedByUid, MaxSz).
-
-create_team(TeamId, Name, CreatedByUid, MaxSz) ->
+create_bottle(Type, Id, Name, CreatedByUid, MaxSz, AddSelf) ->
   Epoch = epoch(),
-  hmset(team, TeamId, [name, Name,
-                       created, Epoch,
-                       maxSz, MaxSz,
-                       createdBy, CreatedByUid]),
-  add_member(TeamId, CreatedByUid), % creator is auto-joined to team
-  zadd(teams, epoch(), TeamId).
+  hmset(Type, Id, [name, Name,
+                   created, Epoch,
+                   maxSz, MaxSz,
+                   createdBy, CreatedByUid]),
+  case AddSelf of
+    addSelf -> add_member(Type, Id, CreatedByUid); % creator auto-joined to team
+          _ -> nope
+  end,
+  zadd(Type, epoch(), Id).
 
 epoch() ->
   {Mega, Sec, _} = now(),
   Mega * 1000000 + Sec.
 
-add_member(TeamId, NewMemberId) ->
-  MaxSz = list_to_integer(binary_to_list(hget(team, TeamId, maxSz))),
-  with_team_lock(TeamId,
+%%%--------------------------------------------------------------------
+%%% Reading
+%%%--------------------------------------------------------------------
+member_count(Type, Id) ->
+  zcard(Type, members, Id).
+
+% e.g. all teams available = all(team)
+all(Type) ->
+  zmembers(Type).
+
+members_of(Type, Id) ->
+  zmembers(Type, members, Id).
+
+member_has(Type, Uid) ->
+  zmembers(memberHas, Type, Uid).
+
+bottle_props(Type, Id) ->
+  hgetall(Type, Id).
+
+bottle_prop(Type, Id, Prop) ->
+  hget(Type, Id, Prop).
+
+is_member(Type, Id, Uid) ->
+  zmember(Type, members, Id, Uid).
+
+%%%--------------------------------------------------------------------
+%%% Abstract Bottle Manipulation
+%%%--------------------------------------------------------------------
+add_member(Type, Id, NewMemberId) ->
+  MaxSz = list_to_integer(binary_to_list(hget(Type, Id, maxSz))),
+  with_lock(Type, Id,
     fun(Size) when Size < MaxSz ->
-      zadd(members, TeamId, epoch(), NewMemberId),
-      zadd(teams, NewMemberId, epoch(), TeamId);
+      % e.g. course:members:CourseId -> {members}:
+      zadd(Type, members, Id, epoch(), NewMemberId),
+      % e.g. memberHas:course:UID -> {courses}:
+      zadd(memberHas, Type, NewMemberId, epoch(), Id),
+      Size + 1;
     (_) -> full
   end).
 
-remove_member(TeamId, OldMemberId) ->
-  with_team_lock(TeamId,
+remove_member(Type, Id, OldMemberId) ->
+  with_lock(Type, Id,
     fun(_Size) ->
-      zrem(members, TeamId, OldMemberId),
-      zrem(teams, OldMemberId, TeamId)
+      % remove from memberHas:course:MemberId -> {joined courses}
+      zrem(memberHas, Type, OldMemberId, Id),
+      % remove from course:members:CourseId -> {members}
+      zrem(Type, members, Id, OldMemberId)
   end).
 
+% Hate me later.
 gen_token() ->
   list_to_binary(
    string:to_lower(
@@ -145,14 +102,15 @@ gen_token() ->
        base64:encode(
         crypto:rand_bytes(12)), "[+=/]", "", [global]))))).
 
-create_invite_token(TeamId, InviterUid) ->
-  create_invite_token(TeamId, InviterUid, anybody).
+create_invite_token(Type, Id, InviterUid) ->
+  create_invite_token(Type, Id, InviterUid, anybody).
 
-create_invite_token(TeamId, InviterUid, SpecificallyFor) ->
+create_invite_token(Type, Id, InviterUid, SpecificallyFor) ->
   TokenUUid = gen_token(),
   TokenDetails = [creator, InviterUid,
                   created, epoch(),
-                  team, TeamId,
+                  type, Type,
+                  id, Id,
                   forUid, SpecificallyFor],
   hmset(token, TokenUUid, TokenDetails),
   TokenUUid.
@@ -169,9 +127,10 @@ redeem_invite_token(TokenId, UserId) when is_binary(UserId) ->
   end.
 
 redeem(TokenId, TokenDetails, UserId) ->
-  TeamId = get_value(team, TokenDetails),
+  Type = get_value(type, TokenDetails),
+  Id = get_value(id, TokenDetails),
   Epoch = epoch(),
-  case add_member(TeamId, UserId) of
+  case add_member(Type, Id, UserId) of
     full -> full;
        _ -> hmset(token, TokenId, [redeemed_by, UserId,
                                    redeemed_at, Epoch]),
@@ -179,9 +138,6 @@ redeem(TokenId, TokenDetails, UserId) ->
             zadd(redeemed_tokens, Epoch, TokenId),
             welcome
   end.
-
-with_team_lock(TeamId, WorkFun) ->
-  with_lock(team, TeamId, fun() -> WorkFun(team_size(TeamId)) end).
 
 % create a max of 5 sub8 here exclusive of all other sub8s
 
@@ -217,30 +173,30 @@ hget(Type, Id, What) ->
 hgetall(Type, Id) ->
   er:hgetall_p(redis_allegiance, genkey(Type, Id)).
 
-zmember(Type, Id, Member) ->
-  case er:zrank(redis_allegiance, genkey(Type, Id), Member) of
+zmember(Type, Section, Id, Member) ->
+  case er:zrank(redis_allegiance, genkey(Type, Section, Id), Member) of
     nil -> false;
       _ -> true
   end.
 
 zmembers(Type) ->
   er:zrange(redis_allegiance, genkey(Type), 0, -1).
-zmembers(Type, Id) ->
-  er:zrange(redis_allegiance, genkey(Type, Id), 0, -1).
+zmembers(Type, Section, Id) ->
+  er:zrange(redis_allegiance, genkey(Type, Section, Id), 0, -1).
 
-zcard(Type, Id) ->
-  er:zcard(redis_allegiance, genkey(Type, Id)).
+zcard(What, Type, Id) ->
+  er:zcard(redis_allegiance, genkey(What, Type, Id)).
 
 zadd(Type, Score, NewThing) ->
   er:zadd(redis_allegiance, genkey(Type), Score, NewThing).
 
-zadd(Type, Id, Score, NewThing) ->
-  er:zadd(redis_allegiance, genkey(Type, Id), Score, NewThing).
+zadd(Type, Section, Id, Score, NewThing) ->
+  er:zadd(redis_allegiance, genkey(Type, Section, Id), Score, NewThing).
 
 zrem(Type, OldThing) ->
   er:zrem(redis_allegiance, genkey(Type), OldThing).
-zrem(Type, Id, OldThing) ->
-  er:zrem(redis_allegiance, genkey(Type, Id), OldThing).
+zrem(Type, Section, Id, OldThing) ->
+  er:zrem(redis_allegiance, genkey(Type, Section, Id), OldThing).
 
 lock(Type, Id) ->
   er:setnx(redis_allegiance, key_locker(Type, Id), term_to_binary(now())),
@@ -250,3 +206,14 @@ unlock(Type, Id) ->
 
 key_locker(Type, Id) ->
   genkey(templock, Type, Id).
+
+%%%--------------------------------------------------------------------
+%%% helping
+%%%--------------------------------------------------------------------
+with_lock(Type, Id, WorkFun) ->
+  lock(Type, Id),
+  try
+    WorkFun(member_count(Type, Id))
+  after
+    unlock(Type, Id)
+  end.

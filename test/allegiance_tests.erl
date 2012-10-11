@@ -5,7 +5,7 @@
 %%%----------------------------------------------------------------------
 %%% Prelude
 %%%----------------------------------------------------------------------
-allegiance_test_() ->
+allegance_test_() ->
   {setup,
     fun setup/0,
     fun teardown/1,
@@ -36,12 +36,13 @@ allegiance_test_() ->
 %%% Tests
 %%%----------------------------------------------------------------------
 cohort_3() ->
-  Result1 = allegiance:add_cohort_to_user(user1, cohort1),
-  Result2 = allegiance:add_cohort_to_user(user1, cohort2),
-  Result3 = allegiance:add_cohort_to_user(user1, cohort3),
-  All = allegiance:cohorts_for_user(user1),
-  Yes = allegiance:is_cohort_member(user1, cohort3),
-  No = allegiance:is_cohort_member(user1, cohort64),
+  acohort:create_cohort("awesome cohort of awesomeness", user1),
+  Result1 = acohort:join(user1, cohort1),
+  Result2 = acohort:join(user1, cohort2),
+  Result3 = acohort:join(user1, cohort3),
+  All = acohort:cohorts_for(user1),
+  Yes = acohort:is_cohort_member(user1, cohort3),
+  No = acohort:is_cohort_member(user1, cohort64),
   ?assertEqual(1, Result1),
   ?assertEqual(2, Result2),
   ?assertEqual(3, Result3),
@@ -50,11 +51,11 @@ cohort_3() ->
   ?assertEqual(false, No).
 
 cohort_7() ->
-  Result4 = allegiance:add_cohort_to_user(user1, cohort4),
-  Result5 = allegiance:add_cohort_to_user(user1, cohort5),
-  Result6 = allegiance:add_cohort_to_user(user1, cohort6),
-  Result7 = allegiance:add_cohort_to_user(user1, cohort7),
-  All = allegiance:cohorts_for_user(user1),
+  Result4 = acohort:join(user1, cohort4),
+  Result5 = acohort:join(user1, cohort5),
+  Result6 = acohort:join(user1, cohort6),
+  Result7 = acohort:join(user1, cohort7),
+  All = acohort:cohorts_for(user1),
   ?assertEqual(4, Result4),
   ?assertEqual(5, Result5),
   ?assertEqual(full, Result6),
@@ -63,28 +64,28 @@ cohort_7() ->
                 <<"cohort3">>, <<"cohort4">>, <<"cohort5">>], All).
 
 cohort_reversal() ->
-  ReversedYes = allegiance:users_who_have_this_uid_as_a_cohort(cohort4),
-  ReversedNo = allegiance:users_who_have_this_uid_as_a_cohort(cohort7),
+  ReversedYes = acohort:cohorts_uid_belongs_to(cohort4),
+  ReversedNo = acohort:cohorts_uid_belongs_to(cohort7),
   ?assertEqual([<<"user1">>], ReversedYes),
   ?assertEqual([], ReversedNo).
 
 cohort_removal() ->
-  Six = allegiance:remove_cohort_from_user(user1, cohort6),
-  Five = allegiance:remove_cohort_from_user(user1, cohort5),
-  Seven = allegiance:remove_cohort_from_user(user1, cohort7),
+  Six = acohort:leave(user1, cohort6),
+  Five = acohort:leave(user1, cohort5),
+  Seven = acohort:leave(user1, cohort7),
   ?assertEqual(0, Six),
   ?assertEqual(1, Five),
   ?assertEqual(0, Seven).
 
 create_team() ->
-  Added = allegiance:create_team("Team Broooooooohaha", mineUid),
-  Name = allegiance:team_property(1, name),
-  Teams = allegiance:teams(),
-  Members = allegiance:members_of_team(1),
-  TeamsOfMember = allegiance:teams_for_member(mineUid),
-  Sz = allegiance:team_size(1),
-  Yes = allegiance:is_team_member(1, mineUid),
-  No = allegiance:is_team_member(1, froofroo),
+  Added = ateam:create_team("Team Broooooooohaha", mineUid),
+  Name = ateam:team_property(1, name),
+  Teams = ateam:teams(),
+  Members = ateam:members_of_team(1),
+  TeamsOfMember = ateam:teams_for_member(mineUid),
+  Sz = ateam:team_size(1),
+  Yes = ateam:is_team_member(1, mineUid),
+  No = ateam:is_team_member(1, froofroo),
   ?assertEqual([<<"1">>], Teams),
   ?assertEqual(1, Added),
   ?assertEqual(<<"Team Broooooooohaha">>, Name),
@@ -95,27 +96,27 @@ create_team() ->
   ?assertEqual(false, No).
 
 add_member() ->
-  allegiance:add_member(1, bobAdded),
-  Members = allegiance:members_of_team(1),
+  ateam:join(1, bobAdded),
+  Members = ateam:members_of_team(1),
   ?assertEqual([<<"bobAdded">>, <<"mineUid">>], Members).
 
 remove_member() ->
-  allegiance:remove_member(1, bobAdded),
-  Members = allegiance:members_of_team(1),
+  ateam:leave(1, bobAdded),
+  Members = ateam:members_of_team(1),
   ?assertEqual([<<"mineUid">>], Members).
 
 token_doing() ->
-  TokenAnybody = allegiance:create_invite_token(1, mineUid),
-  TokenBob = allegiance:create_invite_token(1, mineUid, bob),
-  GoodFine = allegiance:redeem_invite_token(TokenAnybody, anybodyJones),
-  Bad = allegiance:redeem_invite_token(TokenBob, notBob),
-  GoodBob = allegiance:redeem_invite_token(TokenBob, bob),
+  TokenAnybody = ateam:create_invite_token(1, mineUid),
+  TokenBob = ateam:create_invite_token(1, mineUid, bob),
+  GoodFine = ateam:redeem_invite_token(TokenAnybody, anybodyJones),
+  Bad = ateam:redeem_invite_token(TokenBob, notBob),
+  GoodBob = ateam:redeem_invite_token(TokenBob, bob),
 
-  Members = allegiance:members_of_team(1),
-  Sz = allegiance:team_size(1),
-  TeamsOfMemberNotBob = allegiance:teams_for_member(notBob),
-  TeamsOfMemberBob = allegiance:teams_for_member(bob),
-  TeamsOfMemberAJ = allegiance:teams_for_member(anybodyJones),
+  Members = ateam:members_of_team(1),
+  Sz = ateam:team_size(1),
+  TeamsOfMemberNotBob = ateam:teams_for_member(notBob),
+  TeamsOfMemberBob = ateam:teams_for_member(bob),
+  TeamsOfMemberAJ = ateam:teams_for_member(anybodyJones),
 
   ?assertEqual(welcome, GoodFine),
   ?assertEqual(baduser, Bad),
