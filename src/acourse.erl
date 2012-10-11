@@ -3,7 +3,7 @@
 -export([create_course/2, create_course/3, create_course/4]).
 -export([courses/0, course_properties/1, course_property/2]).
 -export([members_of_course/1, is_course_member/2]).
--export([courses_for_member/1]).
+-export([courses_for/1]).
 -export([course_size/1]).
 
 -export([create_invite_token/2, create_invite_token/3]).
@@ -20,7 +20,7 @@ courses() ->
 members_of_course(CourseId) ->
   allegiance:members_of(course, CourseId).
 
-courses_for_member(Uid) ->
+courses_for(Uid) ->
   allegiance:member_has(course, Uid).
 
 course_size(CourseId) ->

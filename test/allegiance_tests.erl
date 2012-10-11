@@ -82,7 +82,7 @@ create_team() ->
   Name = ateam:team_property(1, name),
   Teams = ateam:teams(),
   Members = ateam:members_of_team(1),
-  TeamsOfMember = ateam:teams_for_member(mineUid),
+  TeamsOfMember = ateam:teams_for(mineUid),
   Sz = ateam:team_size(1),
   Yes = ateam:is_team_member(1, mineUid),
   No = ateam:is_team_member(1, froofroo),
@@ -114,9 +114,9 @@ token_doing() ->
 
   Members = ateam:members_of_team(1),
   Sz = ateam:team_size(1),
-  TeamsOfMemberNotBob = ateam:teams_for_member(notBob),
-  TeamsOfMemberBob = ateam:teams_for_member(bob),
-  TeamsOfMemberAJ = ateam:teams_for_member(anybodyJones),
+  TeamsOfMemberNotBob = ateam:teams_for(notBob),
+  TeamsOfMemberBob = ateam:teams_for(bob),
+  TeamsOfMemberAJ = ateam:teams_for(anybodyJones),
 
   ?assertEqual(welcome, GoodFine),
   ?assertEqual(baduser, Bad),

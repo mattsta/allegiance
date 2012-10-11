@@ -3,7 +3,7 @@
 -export([create_team/2, create_team/3, create_team/4]).
 -export([teams/0, team_properties/1, team_property/2]).
 -export([members_of_team/1, is_team_member/2]).
--export([teams_for_member/1]).
+-export([teams_for/1]).
 -export([team_size/1]).
 
 -export([create_invite_token/2, create_invite_token/3]).
@@ -20,7 +20,7 @@ teams() ->
 members_of_team(TeamId) ->
   allegiance:members_of(team, TeamId).
 
-teams_for_member(Uid) ->
+teams_for(Uid) ->
   allegiance:member_has(team, Uid).
 
 team_size(TeamId) ->
