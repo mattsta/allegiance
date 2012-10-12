@@ -3,13 +3,14 @@
 -export([create_course/2, create_course/3, create_course/4]).
 -export([courses/0, course_properties/1, course_property/2]).
 -export([members_of_course/1, is_course_member/2]).
--export([courses_for/1]).
+-export([courses_for/1, count_courses_for/1]).
 -export([course_size/1]).
 
 -export([create_invite_token/2, create_invite_token/3]).
 -export([redeem_invite_token/2]).
 
 -export([join/2, leave/2]).
+-export([join_if_under_limit/3]).
 
 %%%--------------------------------------------------------------------
 %%% Courseing Reading
@@ -22,6 +23,9 @@ members_of_course(CourseId) ->
 
 courses_for(Uid) ->
   allegiance:member_has(course, Uid).
+
+count_courses_for(Uid) ->
+  allegiance:count_member_has(course, Uid).
 
 course_size(CourseId) ->
   allegiance:member_count(course, CourseId).
@@ -53,6 +57,10 @@ create_course(CourseId, Name, CreatedByUid, MaxSz) ->
 %%%--------------------------------------------------------------------
 join(CourseId, NewMemberId) ->
   allegiance:add_member(course, CourseId, NewMemberId).
+
+join_if_under_limit(CourseId, NewMemberId, MaxCoursesForMember) ->
+  allegiance:add_member_if_not_over_limit(course, CourseId,
+                                          NewMemberId, MaxCoursesForMember).
 
 leave(CourseId, OldMemberId) ->
   allegiance:remove_member(course, CourseId, OldMemberId).

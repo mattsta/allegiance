@@ -2,11 +2,12 @@
 
 -export([start/0]).
 
--export([all/1, members_of/2, member_has/2]).
+-export([all/1, members_of/2, member_has/2, count_member_has/2]).
 -export([bottle_props/2, bottle_prop/3, bottle_prop/4]).
 -export([is_member/3]).
 -export([member_count/2]).
 -export([create_bottle/4, create_bottle/5, create_bottle/6]).
+-export([add_member_if_not_over_limit/4]).
 -export([add_member/3, remove_member/3]).
 -export([create_invite_token/3, create_invite_token/4, redeem_invite_token/2]).
 
@@ -71,6 +72,9 @@ members_of(Type, Id) ->
 member_has(Type, Uid) ->
   zmembers(memberHas, Type, Uid).
 
+count_member_has(Type, Uid) ->
+  zcard(memberHas, Type, Uid).
+
 bottle_props(Type, Id) ->
   hgetall(Type, Id).
 
@@ -86,15 +90,34 @@ is_member(Type, Id, Uid) ->
 %%%--------------------------------------------------------------------
 %%% Abstract Bottle Manipulation
 %%%--------------------------------------------------------------------
+add_member_if_not_over_limit(Type, Id, NewMemberId, MaxJoined) when
+    is_integer(MaxJoined) ->
+  add_member(Type, Id, NewMemberId, fun() ->
+    with_lock(memberCoutLock, NewMemberId,
+      fun(_) -> % this ('_') count is always nil, so doesn't matter.
+        HasThisMany = count_member_has(Type, NewMemberId),
+        if
+          HasThisMany  < MaxJoined -> true;
+          HasThisMany >= MaxJoined -> false
+        end
+      end)
+    end).
+
 add_member(Type, Id, NewMemberId) ->
+  add_member(Type, Id, NewMemberId, fun() -> true end).
+
+add_member(Type, Id, NewMemberId, Extra) when is_function(Extra) ->
   MaxSz = list_to_integer(binary_to_list(hget(Type, Id, maxSz))),
   with_lock(Type, Id,
     fun(Size) when Size < MaxSz ->
-      % e.g. course:members:CourseId -> {members}:
-      zadd(Type, members, Id, epoch(), NewMemberId),
-      % e.g. memberHas:course:UID -> {courses}:
-      zadd(memberHas, Type, NewMemberId, epoch(), Id),
-      Size + 1;
+      case Extra() of
+         true -> % e.g. course:members:CourseId -> {members}:
+                 zadd(Type, members, Id, epoch(), NewMemberId),
+                 % e.g. memberHas:course:UID -> {courses}:
+                 zadd(memberHas, Type, NewMemberId, epoch(), Id),
+                 Size + 1;
+        false -> denied
+      end;
     (_) -> full
   end).
 
