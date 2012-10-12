@@ -93,7 +93,7 @@ is_member(Type, Id, Uid) ->
 add_member_if_not_over_limit(Type, Id, NewMemberId, MaxJoined) when
     is_integer(MaxJoined) ->
   add_member(Type, Id, NewMemberId, fun() ->
-    with_lock(memberCoutLock, NewMemberId,
+    with_lock(memberCountLock, NewMemberId,
       fun(_) -> % this ('_') count is always nil, so doesn't matter.
         HasThisMany = count_member_has(Type, NewMemberId),
         if
@@ -107,7 +107,10 @@ add_member(Type, Id, NewMemberId) ->
   add_member(Type, Id, NewMemberId, fun() -> true end).
 
 add_member(Type, Id, NewMemberId, Extra) when is_function(Extra) ->
-  MaxSz = list_to_integer(binary_to_list(hget(Type, Id, maxSz))),
+  MaxSz = case hget(Type, Id, maxSz) of
+              nil -> 40000000; % if no size, assume unlimited
+                S -> list_to_integer(binary_to_list(S))
+          end,
   with_lock(Type, Id,
     fun(Size) when Size < MaxSz ->
       case Extra() of
