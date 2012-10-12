@@ -28,7 +28,10 @@ allegance_test_() ->
        fun remove_member/0},
 
      {"Token creation and redemption",
-       fun token_doing/0}
+       fun token_doing/0},
+
+     {"Remove members until team deletes itself",
+       fun remove_members_until_team_vanishes/0}
     ]
   }.
 
@@ -130,6 +133,13 @@ token_doing() ->
   ?assertEqual([<<"1">>], TeamsOfMemberBob),
   ?assertEqual([<<"1">>], TeamsOfMemberAJ),
   ?assertEqual(3, Sz).
+
+remove_members_until_team_vanishes() ->
+  ateam:leave(1, anybodyJones),
+  ateam:leave(1, bob),
+  ateam:leave(1, mineUid),
+  Nothing = ateam:team_property(1, name),
+  ?assertEqual(nil, Nothing).
 
 %%%----------------------------------------------------------------------
 %%% Set it up, tear it down

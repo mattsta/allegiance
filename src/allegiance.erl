@@ -46,6 +46,16 @@ epoch() ->
   Mega * 1000000 + Sec.
 
 %%%--------------------------------------------------------------------
+%%% Bottle De-Creation
+%%%--------------------------------------------------------------------
+delete_bottle(Type, Id) ->
+  with_lock(Type, Id,
+    fun(0) -> del(Type, Id),
+              zrem(Type, Id);
+       (_) -> not_zero_members
+  end).
+
+%%%--------------------------------------------------------------------
 %%% Reading
 %%%--------------------------------------------------------------------
 member_count(Type, Id) ->
@@ -90,11 +100,17 @@ add_member(Type, Id, NewMemberId) ->
 
 remove_member(Type, Id, OldMemberId) ->
   with_lock(Type, Id,
-    fun(_Size) ->
+    fun(Size) ->
       % remove from memberHas:course:MemberId -> {joined courses}
       zrem(memberHas, Type, OldMemberId, Id),
       % remove from course:members:CourseId -> {members}
-      zrem(Type, members, Id, OldMemberId)
+      R = zrem(Type, members, Id, OldMemberId),
+      % don't allow zero-member groups.  just delete the entire bottle.
+      case Size of
+        1 -> delete_bottle(Type, Id);
+        _ -> ok
+      end,
+      R
   end).
 
 % Hate me later.
@@ -202,6 +218,9 @@ zrem(Type, OldThing) ->
   er:zrem(redis_allegiance, genkey(Type), OldThing).
 zrem(Type, Section, Id, OldThing) ->
   er:zrem(redis_allegiance, genkey(Type, Section, Id), OldThing).
+
+del(Type, Id) ->
+  er:del(redis_allegiance, genkey(Type, Id)).
 
 lock(Type, Id) ->
   er:setnx(redis_allegiance, key_locker(Type, Id), term_to_binary(now())),
