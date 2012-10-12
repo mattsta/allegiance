@@ -1,7 +1,7 @@
 -module(ateam).
 
 -export([create_team/2, create_team/3, create_team/4]).
--export([teams/0, team_properties/1, team_property/2]).
+-export([teams/0, team_properties/1, team_property/2, team_property/3]).
 -export([members_of_team/1, is_team_member/2]).
 -export([teams_for/1]).
 -export([team_size/1]).
@@ -31,6 +31,9 @@ team_properties(TeamId) ->
 
 team_property(TeamId, Property) ->
   allegiance:bottle_prop(team, TeamId, Property).
+
+team_property(Uid, Property, Value) ->
+  allegiance:bottle_prop(team, Uid, Property, Value).
 
 is_team_member(TeamId, Uid) ->
   allegiance:is_member(team, TeamId, Uid).

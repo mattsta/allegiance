@@ -87,6 +87,8 @@ create_team() ->
   Sz = ateam:team_size(1),
   Yes = ateam:is_team_member(1, mineUid),
   No = ateam:is_team_member(1, froofroo),
+  ateam:team_property(CreatedId, name, rambo2),
+  NewName = ateam:team_property(CreatedId, name),
   ?assertEqual([<<"1">>], Teams),
   ?assertEqual(1, CreatedId),
   ?assertEqual(<<"Team Broooooooohaha">>, Name),
@@ -94,7 +96,8 @@ create_team() ->
   ?assertEqual([<<"1">>], TeamsOfMember),
   ?assertEqual(1, Sz),
   ?assertEqual(true, Yes),
-  ?assertEqual(false, No).
+  ?assertEqual(false, No),
+  ?assertEqual(<<"rambo2">>, NewName).
 
 add_member() ->
   ateam:join(1, bobAdded),
