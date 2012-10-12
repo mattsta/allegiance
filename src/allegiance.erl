@@ -38,7 +38,8 @@ create_bottle(Type, Id, Name, CreatedByUid, MaxSz, AddSelf) ->
     addSelf -> add_member(Type, Id, CreatedByUid); % creator auto-joined to team
           _ -> nope
   end,
-  zadd(Type, epoch(), Id).
+  zadd(Type, epoch(), Id),
+  Id.
 
 epoch() ->
   {Mega, Sec, _} = now(),

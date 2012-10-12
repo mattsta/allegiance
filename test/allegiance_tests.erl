@@ -36,13 +36,14 @@ allegance_test_() ->
 %%% Tests
 %%%----------------------------------------------------------------------
 cohort_3() ->
-  acohort:create_cohort("awesome cohort of awesomeness", user1),
+  CreatedId = acohort:create_cohort("awesome cohort of awesomeness", user1),
   Result1 = acohort:join(user1, cohort1),
   Result2 = acohort:join(user1, cohort2),
   Result3 = acohort:join(user1, cohort3),
   All = acohort:cohorts_for(user1),
   Yes = acohort:is_cohort_member(user1, cohort3),
   No = acohort:is_cohort_member(user1, cohort64),
+  ?assertEqual(user1, CreatedId),
   ?assertEqual(1, Result1),
   ?assertEqual(2, Result2),
   ?assertEqual(3, Result3),
@@ -78,7 +79,7 @@ cohort_removal() ->
   ?assertEqual(0, Seven).
 
 create_team() ->
-  Added = ateam:create_team("Team Broooooooohaha", mineUid),
+  CreatedId = ateam:create_team("Team Broooooooohaha", mineUid),
   Name = ateam:team_property(1, name),
   Teams = ateam:teams(),
   Members = ateam:members_of_team(1),
@@ -87,7 +88,7 @@ create_team() ->
   Yes = ateam:is_team_member(1, mineUid),
   No = ateam:is_team_member(1, froofroo),
   ?assertEqual([<<"1">>], Teams),
-  ?assertEqual(1, Added),
+  ?assertEqual(1, CreatedId),
   ?assertEqual(<<"Team Broooooooohaha">>, Name),
   ?assertEqual([<<"mineUid">>], Members),
   ?assertEqual([<<"1">>], TeamsOfMember),
