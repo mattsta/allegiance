@@ -10,6 +10,7 @@
 -export([add_member_if_not_over_limit/4]).
 -export([add_member/3, remove_member/3]).
 -export([create_invite_token/3, create_invite_token/4, redeem_invite_token/2]).
+-export([delete_bottle/2]).  % maybe somebody wants to use it someday
 
 -import(proplists, [get_value/2]).
 
@@ -126,17 +127,11 @@ add_member(Type, Id, NewMemberId, Extra) when is_function(Extra) ->
 
 remove_member(Type, Id, OldMemberId) ->
   with_lock(Type, Id,
-    fun(Size) ->
+    fun(_TotalTeamSize) ->
       % remove from memberHas:course:MemberId -> {joined courses}
       zrem(memberHas, Type, OldMemberId, Id),
       % remove from course:members:CourseId -> {members}
-      R = zrem(Type, members, Id, OldMemberId),
-      % don't allow zero-member groups.  just delete the entire bottle.
-      case Size of
-        1 -> delete_bottle(Type, Id);
-        _ -> ok
-      end,
-      R
+      zrem(Type, members, Id, OldMemberId)
   end).
 
 % Hate me later.
